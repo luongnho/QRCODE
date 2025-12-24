@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AppTab } from './types';
 import ThemeToggle from './components/ThemeToggle';

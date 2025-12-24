@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Bank, QRData } from '../types';
 import { fetchBanks, generateQRUrl } from '../services/vietQrService';

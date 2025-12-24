@@ -1,4 +1,3 @@
-
 import { BankResponse, QRData } from '../types';
 import { VIETQR_API_BANKS } from '../constants';
 

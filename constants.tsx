@@ -1,4 +1,3 @@
-
 import { Denomination } from './types';
 
 export const VND_DENOMINATIONS: Denomination[] = [

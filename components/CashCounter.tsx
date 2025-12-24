@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { VND_DENOMINATIONS } from '../constants';
 import { CashCount } from '../types';
