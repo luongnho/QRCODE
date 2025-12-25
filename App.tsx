@@ -58,7 +58,7 @@ const App: React.FC = () => {
         <header className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="animate-slideDown">
             <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-2">
-              {activeTab === AppTab.VIETQR ? 'Cổng tạo mã QR' : 'Công cụ kiểm đếm'}
+              {activeTab === AppTab.VIETQR ? 'Cổng tạo mã QR' : 'Công cụ đếm tiền'}
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
               {activeTab === AppTab.VIETQR 

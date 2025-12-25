@@ -115,14 +115,6 @@ const CashCounter: React.FC = () => {
         ))}
       </div>
       
-      <div className="mt-12 p-8 sm:p-10 bg-gradient-to-br from-slate-100/50 to-slate-200/50 dark:from-slate-900/30 dark:to-slate-800/30 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800 text-center relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-        <i className="fas fa-shield-heart text-slate-300 dark:text-slate-700 text-3xl mb-4"></i>
-        <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-bold uppercase tracking-widest leading-relaxed">
-          Đã tối ưu giao diện hiển thị số tiền.<br/>
-          Hệ thống tính toán tự động chính xác 100%.
-        </p>
-      </div>
     </div>
   );
 };

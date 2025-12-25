@@ -1,14 +1,13 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Bank, QRData } from '../types';
 import { fetchBanks, generateQRUrl } from '../services/vietQrService';
-import { suggestTransferMessage } from '../services/geminiService';
 import { VIETQR_TEMPLATE_OPTIONS } from '../constants';
 
 const VietQRGenerator: React.FC = () => {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [aiSuggesting, setAiSuggesting] = useState(false);
   const [showBankList, setShowBankList] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -57,7 +56,6 @@ const VietQRGenerator: React.FC = () => {
     return banks.find(b => b.bin === formData.bankBin);
   }, [banks, formData.bankBin]);
 
-  // Updated to use 'en-US' for comma separation as requested
   const formatCurrencyInput = (value: string) => {
     const number = value.replace(/\D/g, '');
     if (!number) return '';
@@ -82,17 +80,6 @@ const VietQRGenerator: React.FC = () => {
     }
     const url = generateQRUrl(formData);
     setQrUrl(url);
-  };
-
-  const handleAiSuggest = async () => {
-    if (!formData.description) {
-      alert('Nhập một vài từ khóa vào ô nội dung để AI gợi ý.');
-      return;
-    }
-    setAiSuggesting(true);
-    const suggestion = await suggestTransferMessage(formData.description);
-    setFormData(prev => ({ ...prev, description: suggestion }));
-    setAiSuggesting(false);
   };
 
   if (loading) return (
@@ -243,17 +230,8 @@ const VietQRGenerator: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex justify-between">
+            <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
               Nội dung chuyển khoản
-              <button
-                type="button"
-                onClick={handleAiSuggest}
-                disabled={aiSuggesting}
-                className="text-primary-500 text-xs font-black hover:text-primary-600 flex items-center gap-1 transition-colors uppercase tracking-wider"
-              >
-                {aiSuggesting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-wand-magic-sparkles"></i>}
-                AI Gợi ý
-              </button>
             </label>
             <input
               type="text"
