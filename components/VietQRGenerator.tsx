@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Bank, QRData } from '../types';
+import { Bank, QRData, SavedAccount } from '../types';
 import { fetchBanks, generateQRUrl } from '../services/vietQrService';
 import { VIETQR_TEMPLATE_OPTIONS } from '../constants';
 
@@ -9,7 +9,10 @@ const VietQRGenerator: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showBankList, setShowBankList] = useState(false);
+  const [showSavedList, setShowSavedList] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const savedRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<QRData>({
     bankBin: '',
@@ -27,8 +30,14 @@ const VietQRGenerator: React.FC = () => {
       try {
         const response = await fetchBanks();
         setBanks(response.data);
+        
+        // Load saved accounts from localStorage
+        const saved = localStorage.getItem('saved_accounts');
+        if (saved) {
+          setSavedAccounts(JSON.parse(saved));
+        }
       } catch (err) {
-        console.error('Không thể tải danh sách ngân hàng.');
+        console.error('Không thể tải dữ liệu.');
       } finally {
         setLoading(false);
       }
@@ -38,6 +47,9 @@ const VietQRGenerator: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowBankList(false);
+      }
+      if (savedRef.current && !savedRef.current.contains(event.target as Node)) {
+        setShowSavedList(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -82,6 +94,58 @@ const VietQRGenerator: React.FC = () => {
     setQrUrl(url);
   };
 
+  const saveAccount = () => {
+    if (!formData.bankBin || !formData.accountNumber) {
+      alert('Vui lòng nhập đủ thông tin ngân hàng và STK để lưu.');
+      return;
+    }
+
+    const bank = banks.find(b => b.bin === formData.bankBin);
+    if (!bank) return;
+
+    const newSaved: SavedAccount = {
+      id: Date.now().toString(),
+      bankBin: formData.bankBin,
+      bankShortName: bank.shortName,
+      bankLogo: bank.logo,
+      accountNumber: formData.accountNumber,
+      accountName: formData.accountName,
+    };
+
+    // Check duplicate (by Bank + Account Number)
+    const existsIndex = savedAccounts.findIndex(a => a.bankBin === newSaved.bankBin && a.accountNumber === newSaved.accountNumber);
+    
+    let updated;
+    if (existsIndex > -1) {
+      // If exists, update the existing entry (maybe name changed)
+      updated = [...savedAccounts];
+      updated[existsIndex] = newSaved;
+    } else {
+      updated = [newSaved, ...savedAccounts];
+    }
+
+    setSavedAccounts(updated);
+    localStorage.setItem('saved_accounts', JSON.stringify(updated));
+    alert('Đã lưu tài khoản thành công!');
+  };
+
+  const deleteSavedAccount = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = savedAccounts.filter(a => a.id !== id);
+    setSavedAccounts(updated);
+    localStorage.setItem('saved_accounts', JSON.stringify(updated));
+  };
+
+  const loadSavedAccount = (acc: SavedAccount) => {
+    setFormData(prev => ({
+      ...prev,
+      bankBin: acc.bankBin,
+      accountNumber: acc.accountNumber,
+      accountName: acc.accountName
+    }));
+    setShowSavedList(false);
+  };
+
   if (loading) return (
     <div className="flex justify-center items-center h-64">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -91,12 +155,67 @@ const VietQRGenerator: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn pb-10">
       <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 transition-colors duration-500">
-        <h2 className="text-xl font-bold mb-6 text-slate-800 dark:text-white flex items-center">
-          <span className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center rounded-lg mr-3">
-            <i className="fas fa-university text-sm"></i>
-          </span>
-          Thông tin thanh toán
-        </h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center">
+            <span className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center rounded-lg mr-3">
+              <i className="fas fa-university text-sm"></i>
+            </span>
+            Thông tin thanh toán
+          </h2>
+
+          <div className="relative" ref={savedRef}>
+            <button 
+              type="button"
+              onClick={() => setShowSavedList(!showSavedList)}
+              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-black flex items-center gap-2 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-600 transition-all border border-transparent hover:border-primary-200"
+            >
+              <i className="fas fa-bookmark"></i>
+              ĐÃ LƯU ({savedAccounts.length})
+            </button>
+
+            {showSavedList && (
+              <div className="absolute right-0 mt-3 w-72 sm:w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl z-50 overflow-hidden animate-slideUp">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/30">
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Tài khoản nhanh</span>
+                  <i className="fas fa-history text-slate-300"></i>
+                </div>
+                <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                  {savedAccounts.length > 0 ? savedAccounts.map(acc => (
+                    <div 
+                      key={acc.id}
+                      onClick={() => loadSavedAccount(acc)}
+                      className="group flex items-center gap-3 p-4 hover:bg-primary-50 dark:hover:bg-primary-900/10 cursor-pointer border-b border-slate-50 dark:border-slate-700/30 last:border-0 transition-colors"
+                    >
+                      <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1 border border-slate-100 flex-shrink-0">
+                        <img src={acc.bankLogo} alt={acc.bankShortName} className="max-h-full object-contain" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-black text-[10px] text-primary-600 dark:text-primary-400 uppercase truncate leading-none">{acc.bankShortName}</p>
+                        </div>
+                        <p className="text-xs font-mono font-bold text-slate-800 dark:text-white mt-1">{acc.accountNumber}</p>
+                        {acc.accountName && (
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase truncate mt-0.5">{acc.accountName}</p>
+                        )}
+                      </div>
+                      <button 
+                        onClick={(e) => deleteSavedAccount(acc.id, e)}
+                        className="w-8 h-8 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
+                        title="Xóa tài khoản"
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                  )) : (
+                    <div className="p-8 text-center text-slate-400 italic text-xs">
+                      Chưa có tài khoản nào được lưu
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         
         <form onSubmit={handleGenerate} className="space-y-5">
           <div className="relative" ref={dropdownRef}>
@@ -170,15 +289,25 @@ const VietQRGenerator: React.FC = () => {
               <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
                 Số tài khoản
               </label>
-              <input
-                type="text"
-                name="accountNumber"
-                className="w-full p-4 border-2 border-slate-100 dark:border-slate-700 rounded-2xl dark:bg-slate-900/50 dark:text-white focus:border-primary-500 outline-none transition-all font-mono text-lg"
-                value={formData.accountNumber}
-                onChange={handleInputChange}
-                placeholder="Nhập số tài khoản"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="accountNumber"
+                  className="w-full p-4 border-2 border-slate-100 dark:border-slate-700 rounded-2xl dark:bg-slate-900/50 dark:text-white focus:border-primary-500 outline-none transition-all font-mono text-lg"
+                  value={formData.accountNumber}
+                  onChange={handleInputChange}
+                  placeholder="Nhập số tài khoản"
+                  required
+                />
+                <button 
+                  type="button"
+                  onClick={saveAccount}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-xl text-slate-300 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all"
+                  title="Lưu tài khoản này"
+                >
+                  <i className="fas fa-star text-sm"></i>
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1.5">

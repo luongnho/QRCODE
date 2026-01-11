@@ -1,3 +1,4 @@
+
 export interface Bank {
   id: number;
   name: string;
@@ -26,6 +27,15 @@ export interface QRData {
   amount: string;
   description: string;
   template: 'compact' | 'compact2' | 'qr_only' | 'print';
+}
+
+export interface SavedAccount {
+  id: string;
+  bankBin: string;
+  bankShortName: string;
+  bankLogo: string;
+  accountNumber: string;
+  accountName: string;
 }
 
 export interface Denomination {
